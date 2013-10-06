@@ -1,0 +1,46 @@
+<?php
+
+/**
+ * @file
+ * Provides a Coinbase payment method for Drupal Commerce.
+ */
+
+/**
+ * Implements hook_libraries_info().
+ */
+function commerce_coinbase_libraries_info() {
+  $libraries['coinbase-php'] = array(
+    'name' => 'Coinbase PHP client library',
+    'vendor url' => 'https://coinbase.com',
+    'download url' => 'https://github.com/coinbase/coinbase-php',
+    'path' => 'lib',
+    'files' => array(
+      'php' => array('Coinbase.php'),
+    ),
+    'version arguments' => array(
+      'file' => 'composer.json',
+      'pattern' => '([0-9\.]+)/',
+      'lines' => 20,
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function commerce_coinbase_commerce_payment_method_info() {
+  $payment_methods['coinbase'] = array(
+    'title' => t('Coinbase'),
+    'display_title' => t('Bitcoin'),
+    'short_title' => t('Bitcoin'),
+    'description' => t('Coinbase Bitcoin API'),
+    'active' => FALSE,
+    'terminal' => FALSE,
+    'offsite' => TRUE,
+    'offsite_autoredirect' => TRUE,
+    'file' => 'includes/commerce_coinbase.callbacks.inc',
+  );
+
+  return $payment_methods;
+}
