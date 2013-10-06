@@ -51,8 +51,8 @@ function commerce_coinbase_requirements($phase) {
   }
 
   $requirements['commerce_coinbase_donation'] = array(
-    'title' => $t('Commerce Coinbase module development and maintenance donation'),
-    'description' => $t('Development and maintenance of the Commerce Coinbase module is <strong>not funded by Coinbase</strong>. Please fund maintenance efforts to keep up-to-date with changes to the Coinbase Bitcoin API.'),
+    'title' => $t('Commerce Coinbase development and maintenance'),
+    'description' => $t('Commerce Coinbase is <strong>not funded by Coinbase</strong>. Please fund maintenance efforts to keep up-to-date with changes to the Coinbase Bitcoin API.'),
     'severity' => REQUIREMENT_INFO,
     'value' => '<iframe seamless style="border: 0; margin: 0; padding: 0;"
         src="https://www.gittip.com/deekayen/widget.html"
