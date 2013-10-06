@@ -1,0 +1,63 @@
+<?php
+
+/**
+ * @file
+ * Installation file for the Commerce Coinbase module.
+ */
+
+/**
+ * Implements hook_requirements().
+ *
+ * Verifies the cURL PHP library is available.
+ */
+function commerce_coinbase_requirements($phase) {
+  $t = get_t();
+  $requirements = array();
+
+  // Coinbase's provided API code requires cURL.
+  if (function_exists('curl_version')) {
+    $curl_version = curl_version();
+    $requirements['commerce_coinbase_curl'] = array(
+      'value' => $curl_version['version'],
+      'severity' => REQUIREMENT_OK,
+    );
+  }
+  else {
+    $requirements['commerce_coinbase_curl'] = array(
+      'value' => $t('Not found'),
+      'severity' => REQUIREMENT_ERROR,
+    );
+  }
+  $requirements['commerce_coinbase_curl']['title'] = $t('cURL');
+  $requirements['commerce_coinbase_curl']['description'] = $t('Commerce Coinbase requires the PHP !curl_url library.', array('!curl_url' => l($t('cURL'), 'http://www.php.net/manual/en/book.curl.php')));
+
+  if ($phase == 'runtime') {
+    // Warn if the Coinbase library isn't installed.
+    $library = libraries_detect('coinbase-php');
+    if (!empty($library['installed'])) {
+      $requirements['commerce_coinbase_library'] = array(
+        'value' => $t('Installed'),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['commerce_coinbase_library'] = array(
+        'value' => $t('Not found'),
+        'severity' => REQUIREMENT_ERROR,
+        'description' => $t('Commerce Coinbase requires copying the !support_url to the libraries directory on the web server: sites/all/libraries/coinbase-php or sites/{domain}/libraries/coinbase-php.', array('!support_url' => l($t('Coinbase PHP Client Library'), 'https://github.com/coinbase/coinbase-php'))),
+      );
+    }
+    $requirements['commerce_coinbase_library']['title'] = $t('Coinbase PHP Client Library');
+  }
+
+  $requirements['commerce_coinbase_donation'] = array(
+    'title' => $t('Commerce Coinbase module development and maintenance donation'),
+    'description' => $t('Development and maintenance of the Commerce Coinbase module is <strong>not funded by Coinbase</strong>. Please fund maintenance efforts to keep up-to-date with changes to the Coinbase Bitcoin API.'),
+    'severity' => REQUIREMENT_INFO,
+    'value' => '<iframe seamless style="border: 0; margin: 0; padding: 0;"
+        src="https://www.gittip.com/deekayen/widget.html"
+        width="48pt" height="22pt"></iframe>',
+  );
+
+  return $requirements;
+}
