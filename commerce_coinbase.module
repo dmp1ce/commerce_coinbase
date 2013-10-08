@@ -19,7 +19,7 @@ function commerce_coinbase_libraries_info() {
     ),
     'version arguments' => array(
       'file' => 'composer.json',
-      'pattern' => '([0-9\.]+)/',
+      'pattern' => '/([0-9\.]+)/',
       'lines' => 20,
     ),
   );

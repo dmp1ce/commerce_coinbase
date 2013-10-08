@@ -44,7 +44,7 @@ function commerce_coinbase_requirements($phase) {
       $requirements['commerce_coinbase_library'] = array(
         'value' => $t('Not found'),
         'severity' => REQUIREMENT_ERROR,
-        'description' => $t('Commerce Coinbase requires copying the !support_url to the libraries directory on the web server: sites/all/libraries/coinbase-php or sites/{domain}/libraries/coinbase-php.', array('!support_url' => l($t('Coinbase PHP Client Library'), 'https://github.com/coinbase/coinbase-php'))),
+        'description' => $t('Commerce Coinbase requires copying the entire !support_url to the libraries directory on the web server: e.g. sites/all/libraries/coinbase-php/lib/Coinbase.php or sites/{domain}/libraries/coinbase-php/lib/Coinbase.php.', array('!support_url' => l($t('Coinbase PHP Client Library'), 'https://github.com/coinbase/coinbase-php'))),
       );
     }
     $requirements['commerce_coinbase_library']['title'] = $t('Coinbase PHP Client Library');
