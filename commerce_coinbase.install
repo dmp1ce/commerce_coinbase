@@ -15,47 +15,34 @@ function commerce_coinbase_requirements($phase) {
   $requirements = array();
 
   // Coinbase's provided API code requires cURL.
-  if (function_exists('curl_version')) {
-    $curl_version = curl_version();
+  if (!function_exists('curl_version')) {
     $requirements['commerce_coinbase_curl'] = array(
-      'value' => $curl_version['version'],
-      'severity' => REQUIREMENT_OK,
-    );
-  }
-  else {
-    $requirements['commerce_coinbase_curl'] = array(
+      'title' => $t('cURL'),
       'value' => $t('Not found'),
       'severity' => REQUIREMENT_ERROR,
+      'description' => $t('Commerce Coinbase requires the PHP !curl_url library.', array('!curl_url' => l($t('cURL'), 'http://www.php.net/manual/en/book.curl.php'))),
     );
   }
-  $requirements['commerce_coinbase_curl']['title'] = $t('cURL');
-  $requirements['commerce_coinbase_curl']['description'] = $t('Commerce Coinbase requires the PHP !curl_url library.', array('!curl_url' => l($t('cURL'), 'http://www.php.net/manual/en/book.curl.php')));
 
   if ($phase == 'runtime') {
     // Warn if the Coinbase library isn't installed.
     $library = libraries_detect('coinbase-php');
-    if (!empty($library['installed'])) {
+    if (empty($library['installed'])) {
       $requirements['commerce_coinbase_library'] = array(
-        'value' => $t('Installed'),
-        'severity' => REQUIREMENT_OK,
-      );
-    }
-    else {
-      $requirements['commerce_coinbase_library'] = array(
+        'title' => $t('Coinbase PHP Client Library'),
         'value' => $t('Not found'),
         'severity' => REQUIREMENT_ERROR,
         'description' => $t('Commerce Coinbase requires copying the entire !support_url to the libraries directory on the web server: e.g. sites/all/libraries/coinbase-php/lib/Coinbase.php or sites/{domain}/libraries/coinbase-php/lib/Coinbase.php.', array('!support_url' => l($t('Coinbase PHP Client Library'), 'https://github.com/coinbase/coinbase-php'))),
       );
     }
-    $requirements['commerce_coinbase_library']['title'] = $t('Coinbase PHP Client Library');
-  }
 
-  $requirements['commerce_coinbase_donation'] = array(
-    'title' => $t('Commerce Coinbase development and maintenance'),
-    'description' => $t('Commerce Coinbase is <strong>not funded by Coinbase</strong>. Please fund maintenance efforts to keep up-to-date with changes to the Coinbase Bitcoin API.'),
-    'severity' => REQUIREMENT_INFO,
-    'value' => '<script data-gittip-username="deekayen" data-gittip-widget="button" src="//gttp.co/v1.js"></script>',
-  );
+    $requirements['commerce_coinbase_donation'] = array(
+      'title' => $t('Commerce Coinbase development and maintenance'),
+      'description' => $t('Commerce Coinbase is <strong>not funded by Coinbase</strong>. Please fund maintenance efforts to keep up-to-date with changes to the Coinbase Bitcoin API.'),
+      'severity' => REQUIREMENT_INFO,
+      'value' => '<script data-gittip-username="deekayen" data-gittip-widget="button" src="//gttp.co/v1.js"></script>',
+    );
+  }
 
   return $requirements;
 }
