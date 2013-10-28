@@ -38,7 +38,7 @@ function commerce_coinbase_commerce_payment_method_info() {
     'active' => FALSE,
     'terminal' => FALSE,
     'offsite' => TRUE,
-    'offsite_autoredirect' => TRUE,
+    'offsite_autoredirect' => FALSE,
     'file' => 'includes/commerce_coinbase.callbacks.inc',
   );
 
