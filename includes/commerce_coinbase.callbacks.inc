@@ -75,6 +75,7 @@ function commerce_coinbase_settings_form($settings = array()) {
     '#description' => t('Using the hosted page will redirect to a generically themed page hosted by Coinbase.'),
     '#default_value' => $settings['redirect_mode'],
   );
+  return $form;
 }
 
 /**
@@ -150,7 +151,7 @@ function commerce_coinbase_redirect_form($form, &$form_state, $order, $payment_m
       'type' => $payment_method['settings']['type'],
       'style' => $payment_method['settings']['type'] . '_' . $payment_method['settings']['style'],
       'text' => $payment_method['settings']['text'],
-      'include_email' => empty($order->mail) ? '' : $order->mail;
+      'include_email' => empty($order->mail) ? '' : $order->mail,
       'callback_url' => url('coinbase/callback/' . $transaction->transaction_id . '/' . $transaction->data['secret']),
       'success_url' => url('coinbase/callback/' . $transaction->transaction_id . '/' . $transaction->data['secret']),
       'cancel_url' => url('checkout/' . $order->order_id . '/commerce_coinbase/cancel_payment'),
