@@ -20,25 +20,67 @@ function commerce_coinbase_requirements($phase) {
       'title' => $t('cURL'),
       'value' => $t('Not found'),
       'severity' => REQUIREMENT_ERROR,
-      'description' => $t('Commerce Coinbase requires the PHP !curl_url library.', array('!curl_url' => l($t('cURL'), 'http://www.php.net/manual/en/book.curl.php'))),
+      'description' => $t('Commerce Coinbase requires the PHP <a href="@curl_url">cURL</a> library.', array('@curl_url' => 'http://www.php.net/manual/en/book.curl.php')),
+    );
+  }
+
+  // Error if the Coinbase library isn't installed.
+  $library = libraries_detect('coinbase-php');
+  if (empty($library['installed'])) {
+    $requirements['commerce_coinbase_library'] = array(
+      'title' => $t('Coinbase PHP Client Library'),
+      'value' => $t('Not found'),
+      'severity' => REQUIREMENT_ERROR,
+      'description' => $t('Commerce Coinbase requires copying the entire <a href="@support_url">Coinbase PHP Client Library</a> to the libraries directory on the web server: e.g. sites/all/libraries/coinbase-php/lib/Coinbase.php or sites/{domain}/libraries/coinbase-php/lib/Coinbase.php.', array('@support_url' => 'https://github.com/coinbase/coinbase-php')),
     );
   }
 
   if ($phase == 'runtime') {
-    // Warn if the Coinbase library isn't installed.
-    $library = libraries_detect('coinbase-php');
-    if (empty($library['installed'])) {
-      $requirements['commerce_coinbase_library'] = array(
-        'title' => $t('Coinbase PHP Client Library'),
-        'value' => $t('Not found'),
-        'severity' => REQUIREMENT_ERROR,
-        'description' => $t('Commerce Coinbase requires copying the entire !support_url to the libraries directory on the web server: e.g. sites/all/libraries/coinbase-php/lib/Coinbase.php or sites/{domain}/libraries/coinbase-php/lib/Coinbase.php.', array('!support_url' => l($t('Coinbase PHP Client Library'), 'https://github.com/coinbase/coinbase-php'))),
+    // Check to see if the Rule has been setup yet.
+    $payment_method = commerce_payment_method_instance_load('coinbase|commerce_payment_coinbase');
+    if (empty($payment_method['settings']['api_key'])) {
+      $requirements['commerce_coinbase_apikey'] = array(
+        'title' => $t('Coinbase configuration'),
+        'value' => $t('!link', array('!link' => l($t('API key missing'), 'admin/commerce/config/payment-methods'))),
+        'severity' => REQUIREMENT_WARNING,
+        'description' => $t('Sign up for an account with <a href="@url">Coinbase</a> to generate an API key.', array('@url' => 'https://coinbase.com/?r=5242664f8fec8d2e4b000007&utm_campaign=user-referral&src=referral-link')),
       );
+    }
+    else {
+      libraries_load('coinbase-php');
+
+      $coinbase = new Coinbase($payment_method['settings']['api_key']);
+
+      $balance = $coinbase->getBalance();
+      if (is_numeric($balance)) {
+        $requirements['commerce_coinbase_balance'] = array(
+          'title' => $t('Coinbase balance'),
+          'value' => $t('@balance BTC', array('@balance' => $balance)),
+          'severity' => REQUIREMENT_INFO,
+        );
+      }
+
+      // @todo
+      // Lookup supported currencies. Warn about unsupported ones.
+      $commerce_currencies = commerce_currencies(TRUE);
+      $currencies = $coinbase->getCurrencies();
+      // echo $currencies[0]->name;
+
+      $commerce_default_currency = commerce_default_currency();
+
+      $exchange_rate = $coinbase->getExchangeRate('BTC', $commerce_default_currency);
+      if (is_numeric($exchange_rate)) {
+        $requirements['commerce_coinbase_balance'] = array(
+          'title' => $t('Coinbase exchange rate'),
+          'value' => $t('1 BTC = @ex @code', array('@ex' => $exchange_rate, $commerce_default_currency)),
+          'severity' => REQUIREMENT_INFO,
+        );
+      }
     }
 
     $requirements['commerce_coinbase_donation'] = array(
       'title' => $t('Commerce Coinbase development and maintenance'),
-      'description' => $t('Commerce Coinbase is <strong>not funded by Coinbase</strong>. Please fund maintenance efforts to keep up-to-date with changes to the Coinbase Bitcoin API.'),
+      'description' => $t('Commerce Coinbase is <strong>not funded by Coinbase</strong> or any other company. Please fund maintenance efforts to keep up-to-date with changes to the Coinbase Bitcoin API.'),
       'severity' => REQUIREMENT_INFO,
       'value' => '<script data-gittip-username="deekayen" data-gittip-widget="button" src="//gttp.co/v1.js"></script>',
     );
