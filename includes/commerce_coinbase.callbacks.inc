@@ -164,9 +164,9 @@ function commerce_coinbase_redirect_form($form, &$form_state, $order, $payment_m
       'style' => $payment_method['settings']['type'] . '_' . $payment_method['settings']['style'],
       'text' => $payment_method['settings']['text'],
       'include_email' => empty($order->mail) ? '' : $order->mail,
-      'callback_url' => url('coinbase/callback/' . $transaction->transaction_id . '/' . $transaction->data['secret']),
-      'success_url' => url('coinbase/callback/' . $transaction->transaction_id . '/' . $transaction->data['secret']),
-      'cancel_url' => url('checkout/' . $order->order_id . '/commerce_coinbase/cancel_payment'),
+      'callback_url' => url('coinbase/callback/' . $transaction->transaction_id . '/' . $transaction->data['secret'], array('absolute' => TRUE)),
+      'success_url' => url('coinbase/callback/' . $transaction->transaction_id . '/' . $transaction->data['secret'], array('absolute' => TRUE)),
+      'cancel_url' => url('checkout/' . $order->order_id . '/commerce_coinbase/cancel_payment', array('absolute' => TRUE)),
     )
   );
 
@@ -182,9 +182,9 @@ function commerce_coinbase_redirect_form($form, &$form_state, $order, $payment_m
 
     case 'iframe':
       // Display an invoice in an iframe on the confirm payment page.
-      $form['#action'] = url('checkout/' . $order->order_id . '/complete');
+      $form['#action'] = url('checkout/' . $order->order_id . '/complete', array('absolute' => TRUE));
 
-      $coinbase_path = drupal_get_path('commerce_coinbase');
+      $coinbase_path = drupal_get_path('module', 'commerce_coinbase');
       drupal_add_js($coinbase_path . '/commerce_coinbase_redirect.js', array('cache' => FALSE));
 
       drupal_add_js(array('coinbaseCompleteCheckout' => $form['#action']), 'setting');

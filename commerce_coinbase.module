@@ -153,7 +153,7 @@ function commerce_coinbase_transaction($payment_method, $order, $charge) {
   $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
   $transaction->message = 'Initialized transaction';
   $transaction->message_variables = array();
-  $transaction->data['secret'] = sha1(md_rand() . uniqid());
+  $transaction->data['secret'] = sha1(mt_rand() . uniqid());
 
   commerce_payment_transaction_save($transaction);
 }
