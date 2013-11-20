@@ -35,6 +35,17 @@ function commerce_coinbase_settings_form($settings = array()) {
     '#description' => t('Coinbase API access key from https://coinbase.com/account/integrations, something like 407fdfa5b4c3706a513c886c41d96cb5388ff1d538fcf0f93292402d3d5036b8.'),
     '#required' => TRUE,
   );
+  $form['checkout_display'] = array(
+    '#type' => 'radios',
+    '#title' => t('Payment display'),
+    '#options' => array(
+      'text' => t('Bitcoin text only'),
+      'icon' => t('Bitcoin icon only'),
+      'both' => t('Both text and icon'),
+    ),
+    '#default_value' => $settings['checkout_display'],
+    '#description' => t('When selecting a payment option, select the indicator next to the radio buttons for payment options.'),
+  );
   $form['type'] = array(
     '#type' => 'select',
     '#default_value' => $settings['type'],
@@ -70,7 +81,7 @@ function commerce_coinbase_settings_form($settings = array()) {
     '#title' => t('Checkout redirect mode'),
     '#options' => array(
       'iframe' => t('Stay on this site using an iframe to embed the hosted checkout page'),
-      'post' => t('Redirect to a checkout page hosted by Coinbase'),
+      'hosted' => t('Redirect to a checkout page hosted by Coinbase'),
     ),
     '#description' => t('Using the hosted page will redirect to a generically themed page hosted by Coinbase.'),
     '#default_value' => $settings['redirect_mode'],
@@ -97,8 +108,8 @@ function commerce_coinbase_submit_form_submit($payment_method, $pane_form, $pane
 
   if (empty($amount)) {
     watchdog('commerce_coinbase', 'Skipping payment on order @id for zero balance.', array('@id' => $order->order_id), WATCHDOG_INFO, l(t('view order'), 'admin/commerce/orders/' . $order->order_id));
-    commerce_bitpay_checkout_complete($order->order_id);
-    drupal_goto(_commerce_bitpay_redirecturl($payment_method, $order));
+    commerce_checkout_complete($order);
+    drupal_goto(url('checkout/' . $order->order_id . '/complete'));
   }
 
   $order->data['coinbase'] = $pane_values;
@@ -164,8 +175,8 @@ function commerce_coinbase_redirect_form($form, &$form_state, $order, $payment_m
       'style' => $payment_method['settings']['type'] . '_' . $payment_method['settings']['style'],
       'text' => $payment_method['settings']['text'],
       'include_email' => empty($order->mail) ? '' : $order->mail,
-      'callback_url' => url('coinbase/callback/' . $transaction->transaction_id . '/' . $transaction->data['secret'], array('absolute' => TRUE)),
-      'success_url' => url('coinbase/callback/' . $transaction->transaction_id . '/' . $transaction->data['secret'], array('absolute' => TRUE)),
+      'callback_url' => url('coinbase/callback/' . $order->order_id . '/' . $transaction->transaction_id . '/' . $transaction->data['secret'], array('absolute' => TRUE)),
+      'success_url' => url('coinbase/callback/' . $order->order_id . '/' . $transaction->transaction_id . '/' . $transaction->data['secret'], array('absolute' => TRUE)),
       'cancel_url' => url('checkout/' . $order->order_id . '/commerce_coinbase/cancel_payment', array('absolute' => TRUE)),
     )
   );
@@ -175,8 +186,8 @@ function commerce_coinbase_redirect_form($form, &$form_state, $order, $payment_m
   commerce_order_save($order);
 
   switch ($payment_method['settings']['redirect_mode']) {
-    case 'post':
-      // Redirect to BitPay hosted invoice page.
+    case 'hosted':
+      // Redirect to Coinbase hosted invoice page.
       drupal_goto('https://coinbase.com/checkouts/' . $response->button->code);
       break;
 
@@ -217,52 +228,4 @@ function commerce_coinbase_redirect_form($form, &$form_state, $order, $payment_m
       );
       return $form;
   }
-}
-
-/**
- *
- * @link https://coinbase.com/docs/merchant_tools/callbacks Callbacks @endlink
- */
-function commerce_coinbase_process_callback($transaction) {
-
-  // status either completed or canceled
-  /*
-{
-  "order": {
-    "id": "5RTQNACF",
-    "created_at": "2012-12-09T21:23:41-08:00",
-    "status": "completed",
-    "total_btc": {
-      "cents": 100000000,
-      "currency_iso": "BTC"
-    },
-    "total_native": {
-      "cents": 1253,
-      "currency_iso": "USD"
-    },
-    "custom": "order1234",
-    "receive_address": "1NhwPYPgoPwr5hynRAsto5ZgEcw1LzM3My",
-    "button": {
-      "type": "buy_now",
-      "name": "Alpaca Socks",
-      "description": "The ultimate in lightweight footwear",
-      "id": "5d37a3b61914d6d0ad15b5135d80c19f"
-    },
-    "transaction": {
-      "id": "514f18b7a5ea3d630a00000f",
-      "hash": "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
-      "confirmations": 0
-    },
-    "customer": {
-      "email": "[email protected]",
-      "shipping_address": [
-        "John Smith",
-        "123 Main St.",
-        "Springfield, OR 97477",
-        "United States"
-      ]
-    }
-  }
-}
-*/
 }
