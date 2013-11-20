@@ -89,6 +89,18 @@ function commerce_coinbase_settings_form($settings = array()) {
  *   An array containing payment_method_info hook values and user settings.
  */
 function commerce_coinbase_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+  // Get order to wrapper.
+  $wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  // Get order price.
+  $amount = $wrapper->commerce_order_total->amount->value();
+
+  if (empty($amount)) {
+    watchdog('commerce_coinbase', 'Skipping payment on order @id for zero balance.', array('@id' => $order->order_id), WATCHDOG_INFO, l(t('view order'), 'admin/commerce/orders/' . $order->order_id));
+    commerce_bitpay_checkout_complete($order->order_id);
+    drupal_goto(_commerce_bitpay_redirecturl($payment_method, $order));
+  }
+
   $order->data['coinbase'] = $pane_values;
 
   commerce_coinbase_transaction($payment_method, $order, $charge);
@@ -171,6 +183,12 @@ function commerce_coinbase_redirect_form($form, &$form_state, $order, $payment_m
     case 'iframe':
       // Display an invoice in an iframe on the confirm payment page.
       $form['#action'] = url('checkout/' . $order->order_id . '/complete');
+
+      $coinbase_path = drupal_get_path('commerce_coinbase');
+      drupal_add_js($coinbase_path . '/commerce_coinbase_redirect.js', array('cache' => FALSE));
+
+      drupal_add_js(array('coinbaseCompleteCheckout' => $form['#action']), 'setting');
+
       $form['iframe'] = array(
         '#markup' => '<iframe seamless style="width:500px; height:160px; overflow:hidden; border:none; margin:auto; display:block;" scrolling="no" allowtransparency="true" frameborder="0" src="https://coinbase.com/inline_payments/' . $response->button->code . '"><a href="https://coinbase.com/checkouts/' . $response->button->code . '" target="_blank"><img alt="Pay With Bitcoin" src="https://coinbase.com/assets/buttons/buy_now_large.png"></a></iframe>',
       );
