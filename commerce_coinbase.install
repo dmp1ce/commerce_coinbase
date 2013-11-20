@@ -38,45 +38,22 @@ function commerce_coinbase_requirements($phase) {
     }
 
     // Check to see if the Rule has been setup yet.
-    $payment_method = commerce_payment_method_instance_load('coinbase|commerce_payment_coinbase');
-    if (empty($payment_method['settings']['api_key'])) {
+    $result = db_select('rules_config', 'r')
+      ->condition('r.data', '%api_key%', 'LIKE')
+      ->condition('r.data', '%coinbase%', 'LIKE')
+      ->condition('r.module', 'commerce_payment')
+      ->condition('r.plugin', 'reaction rule')
+      ->addTag('commerce_coinbase_apikey_requirements')
+      ->countQuery()
+      ->execute()
+      ->fetchField();
+    if (!$result) {
       $requirements['commerce_coinbase_apikey'] = array(
         'title' => $t('Coinbase configuration'),
         'value' => $t('!link', array('!link' => l($t('API key missing'), 'admin/commerce/config/payment-methods'))),
         'severity' => REQUIREMENT_WARNING,
         'description' => $t('Sign up for an account with <a href="@url">Coinbase</a> to generate an API key.', array('@url' => 'https://coinbase.com/?r=5242664f8fec8d2e4b000007&utm_campaign=user-referral&src=referral-link')),
       );
-    }
-    else {
-      libraries_load('coinbase-php');
-
-      $coinbase = new Coinbase($payment_method['settings']['api_key']);
-
-      $balance = $coinbase->getBalance();
-      if (is_numeric($balance)) {
-        $requirements['commerce_coinbase_balance'] = array(
-          'title' => $t('Coinbase balance'),
-          'value' => $t('@balance BTC', array('@balance' => $balance)),
-          'severity' => REQUIREMENT_INFO,
-        );
-      }
-
-      // @todo
-      // Lookup supported currencies. Warn about unsupported ones.
-      $commerce_currencies = commerce_currencies(TRUE);
-      $currencies = $coinbase->getCurrencies();
-      // echo $currencies[0]->name;
-
-      $commerce_default_currency = commerce_default_currency();
-
-      $exchange_rate = $coinbase->getExchangeRate('BTC', $commerce_default_currency);
-      if (is_numeric($exchange_rate)) {
-        $requirements['commerce_coinbase_balance'] = array(
-          'title' => $t('Coinbase exchange rate'),
-          'value' => $t('1 BTC = @ex @code', array('@ex' => $exchange_rate, $commerce_default_currency)),
-          'severity' => REQUIREMENT_INFO,
-        );
-      }
     }
 
     $requirements['commerce_coinbase_donation'] = array(

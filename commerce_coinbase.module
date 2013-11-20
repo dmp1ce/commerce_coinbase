@@ -31,11 +31,11 @@ function commerce_coinbase_libraries_info() {
  */
 function commerce_coinbase_commerce_payment_method_info() {
   $payment_methods['coinbase'] = array(
+    'base' => 'commerce_coinbase',
     'title' => t('Coinbase'),
     'display_title' => t('Bitcoin'),
     'short_title' => t('Bitcoin'),
     'description' => t('Coinbase Bitcoin API'),
-    'active' => FALSE,
     'terminal' => FALSE,
     'offsite' => TRUE,
     'offsite_autoredirect' => FALSE,
@@ -101,6 +101,26 @@ function commerce_coinbase_default_settings() {
     'text' => t('Pay With Bitcoin'),
     'redirect_mode' => 'iframe',
   );
+}
+
+/**
+ * Implements hook_commerce_checkout_pane_info_alter().
+ */
+function commerce_coinbase_commerce_checkout_pane_info_alter(&$checkout_panes) {
+  /*
+  When users try to click the "Complete checkout" button on the iframe payment
+  page, but the paid callback hasn't been received yet, there's a
+  drupal_set_message warning accompanied by "Off-site payment redirect".
+  This alter un-sets that redirect title so that it just shows the warning.
+  */
+  $checkout_panes['commerce_payment_redirect']['title'] = '';
+}
+
+/**
+ * Implements hook_commerce_checkout_page_info_alter().
+ */
+function commerce_coinbase_commerce_checkout_page_info_alter(&$checkout_pages) {
+  $checkout_pages['payment']['help'] = t('Use your Bitcoin client to send payment to the address on the invoice. Once the payment is acknowledged on the blockchain, you may proceed to complete checkout.');
 }
 
 /**
