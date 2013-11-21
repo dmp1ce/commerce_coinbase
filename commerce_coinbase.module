@@ -119,6 +119,7 @@ function commerce_coinbase_cron() {
     ->condition('cpt.payment_method', 'coinbase')
     ->condition('cpt.status', 'pending')
     ->condition('cpt.remote_id', '', '<>')
+    ->condition('cpt.remote_status', 'pending')
     ->addTag('commerce_coinbase_cron_pending')
     ->execute();
   if ($result) {
