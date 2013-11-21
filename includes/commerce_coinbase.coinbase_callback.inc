@@ -24,40 +24,35 @@ function commerce_coinbase_process_callback($order, $transaction) {
     watchdog('commerce_coinbase', 'Transaction callback was empty.');
     return;
   }
-
-  /*
-  Even though everything should be trustworthy, requesting the information back
-  from Coinbase makes extra sure we're getting a legitimate callback.
-  */
-  $payment_method = commerce_payment_method_instance_load($transaction->instance_id);
-  libraries_load('coinbase-php');
-  $coinbase = new Coinbase($payment_method['settings']['api_key']);
-  $coinbase_order_info = $coinbase->getOrder($post_body->order->id);
-
-  if (empty($coinbase_order_info->status)) {
+  if ($post_body->order->custom != $transaction->transaction_id) {
+    watchdog('commerce_coinbase', 'Possible malicious callback posted incorrect custom variable.');
+    return;
+  }
+  if (empty($post_body->order->status)) {
     watchdog('commerce_coinbase', 'Invalid transaction callback.');
   }
   else {
-    switch ($coinbase_order_info->status) {
+    // Update the Drupal order based on the Coinbase order.
+    switch ($post_body->order->status) {
       case 'completed':
         commerce_checkout_complete($order);
-        $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
-        $transaction->message = t('Merchant account credited. Invoice complete.');
-        $transaction->remote_id = $coinbase_order_info->id;
-        $transaction->remote_status = $coinbase_order_info->status;
-        $transaction->payload = $coinbase_order_info;
+        $transaction->message = t('Payment received. Confirmations pending.');
+        $transaction->remote_id = $post_body->order->transaction->id;
         break;
 
       case 'canceled':
         $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
         $transaction->message = t('Payment was canceled.');
-        $transaction->remote_status = $coinbase_order_info->status;
-        $transaction->payload = $coinbase_order_info;
         break;
 
       default:
-        watchdog('commerce_coinbase', 'Unknown payment status for transaction @id: @status', array('@id' => $transaction->transaction_id, '@status' => $coinbase_order_info->status), WATCHDOG_WARNING);
+        watchdog('commerce_coinbase', 'Unknown payment status for transaction @id: @status', array('@id' => $transaction->transaction_id, '@status' => $post_body->order->status), WATCHDOG_WARNING);
+        return;
     }
+    $transaction->payload = $post_body;
     commerce_payment_transaction_save($transaction);
+
+    // Update the Drupal transaction based on the Coinbase transaction.
+    commerce_coinbase_update_transaction($transaction, $post_body->order->transaction->id);
   }
 }

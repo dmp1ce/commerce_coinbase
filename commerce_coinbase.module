@@ -122,31 +122,35 @@ function commerce_coinbase_cron() {
     ->addTag('commerce_coinbase_cron_pending')
     ->execute();
   if ($result) {
-    libraries_load('coinbase-php');
-
     while ($row = $result->fetchAssoc()) {
       $transaction = commerce_payment_transaction_load($row['transaction_id']);
-      $payment_method = commerce_payment_method_instance_load($transaction->instance_id);
-      $coinbase = new Coinbase($payment_method['settings']['api_key']);
-      $coinbase_transaction = $coinbase->getTransaction($row['remote_id']);
-      if (is_object($coinbase_transaction)) {
-        switch ($coinbase_transaction->status) {
-          case 'complete':
-            $transaction->message = t('Transaction complete.');
-            $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
-            break;
-          case 'pending':
-            break;
-          default:
-            watchdog('commerce_coinbase', 'Unknown status from Coinbase for transaction @id: @status.', array('@id' => $transaction->transaction_id, '@status' => $coinbase_transaction->status));
-            continue;
-        }
-      }
-      $transaction->remote_status = $coinbase_transaction->status;
-      $transaction->payload = $coinbase_transaction;
-      commerce_payment_transaction_save($transaction);
+      commerce_coinbase_update_transaction($transaction, $row['remote_id']);
     }
   }
+}
+
+function commerce_coinbase_update_transaction($transaction, $remote_id) {
+  libraries_load('coinbase-php');
+
+  $payment_method = commerce_payment_method_instance_load($transaction->instance_id);
+  $coinbase = new Coinbase($payment_method['settings']['api_key']);
+  $coinbase_transaction = $coinbase->getTransaction($remote_id);
+  if (is_object($coinbase_transaction)) {
+    switch ($coinbase_transaction->status) {
+      case 'complete':
+        $transaction->message = t('Transaction complete.');
+        $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+        break;
+      case 'pending':
+        break;
+      default:
+        watchdog('commerce_coinbase', 'Unknown status from Coinbase for transaction @id: @status.', array('@id' => $transaction->transaction_id, '@status' => $coinbase_transaction->status));
+        continue;
+    }
+  }
+  $transaction->remote_status = $coinbase_transaction->status;
+  $transaction->payload = $coinbase_transaction;
+  commerce_payment_transaction_save($transaction);
 }
 
 /**
