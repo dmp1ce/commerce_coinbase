@@ -150,6 +150,7 @@ function commerce_coinbase_redirect_form($form, &$form_state, $order, $payment_m
     ->fields('cpt', array('transaction_id', 'remote_id', 'message', 'changed'))
     ->condition('cpt.payment_method', 'coinbase')
     ->condition('cpt.order_id', $order->order_id)
+    ->orderBy('cpt.transaction_id', 'DESC')
     ->range(0, 1)
     ->addTag('commerce_coinbase_redirect_transaction')
     ->execute()
