@@ -32,46 +32,32 @@ function commerce_coinbase_process_callback($order, $transaction) {
   $payment_method = commerce_payment_method_instance_load($transaction->instance_id);
   libraries_load('coinbase-php');
   $coinbase = new Coinbase($payment_method['settings']['api_key']);
-  $coinbase_order_info = $coinbase->getOrder($post_body->order->id;);
+  $coinbase_order_info = $coinbase->getOrder($post_body->order->id);
 
   if (empty($coinbase_order_info->status)) {
     watchdog('commerce_coinbase', 'Invalid transaction callback.');
   }
   else {
-    commerce_coinbase_update_transaction($order->order_id, $transaction->transaction_id, $coinbase_order_info);
+    switch ($coinbase_order_info->status) {
+      case 'completed':
+        commerce_checkout_complete($order);
+        $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+        $transaction->message = t('Merchant account credited. Invoice complete.');
+        $transaction->remote_id = $coinbase_order_info->id;
+        $transaction->remote_status = $coinbase_order_info->status;
+        $transaction->payload = $coinbase_order_info;
+        break;
+
+      case 'canceled':
+        $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+        $transaction->message = t('Payment was canceled.');
+        $transaction->remote_status = $coinbase_order_info->status;
+        $transaction->payload = $coinbase_order_info;
+        break;
+
+      default:
+        watchdog('commerce_coinbase', 'Unknown payment status for transaction @id: @status', array('@id' => $transaction->transaction_id, '@status' => $coinbase_order_info->status), WATCHDOG_WARNING);
+    }
+    commerce_payment_transaction_save($transaction);
   }
- }
-
-/**
- * Load an existing transaction to update the status.
- *
- * @param object $order
- *   Commerce order.
- * @param object $transaction
- *   Commerce transaction.
- * @param object $callback
- *   The object returned from querying the status of an invoice at Coinbase.
- */
-function commerce_coinbase_update_transaction($order, $transaction, $callback) {
-  switch ($callback->status) {
-    case 'completed':
-      commerce_checkout_complete($order);
-      $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
-      $transaction->message = t('Merchant account credited. Invoice complete.');
-      $transaction->remote_id = $callback->id;
-      $transaction->remote_status = $callback->status;
-      $transaction->payload = $callback;
-      break;
-
-    case 'canceled':
-      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
-      $transaction->message = t('Payment was canceled.');
-      $transaction->remote_status = $callback->status;
-      $transaction->payload = $callback;
-      break;
-
-    default:
-      watchdog('commerce_coinbase', 'Unknown payment status for transaction @id: @status', array('@id' => $transaction_id, '@status' => $callback->status), WATCHDOG_WARNING);
-  }
-  commerce_payment_transaction_save($transaction);
 }

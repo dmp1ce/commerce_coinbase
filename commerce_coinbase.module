@@ -55,7 +55,7 @@ function commerce_coinbase_menu() {
     'page callback' => 'commerce_coinbase_process_callback',
     'page arguments' => array(2, 3),
     'access callback' => 'commerce_coinbase_callback_access',
-    'access_arguments' => array(3, 4),
+    'access arguments' => array(3, 4),
     'type' => MENU_CALLBACK,
     'file' => 'includes/commerce_coinbase.coinbase_callback.inc',
   );
