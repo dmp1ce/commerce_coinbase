@@ -176,7 +176,8 @@ function commerce_coinbase_redirect_form($form, &$form_state, $order, $payment_m
       'text' => $payment_method['settings']['text'],
       'include_email' => empty($order->mail) ? '' : $order->mail,
       'callback_url' => url('coinbase/callback/' . $order->order_id . '/' . $transaction->transaction_id . '/' . $transaction->data['secret'], array('absolute' => TRUE)),
-      'success_url' => url('coinbase/callback/' . $order->order_id . '/' . $transaction->transaction_id . '/' . $transaction->data['secret'], array('absolute' => TRUE)),
+      // Success and cancel for the hosted invoice to redirect back to Drupal.
+      'success_url' => url('checkout/' . $order->order_id . '/complete', array('absolute' => TRUE)),
       'cancel_url' => url('checkout/' . $order->order_id . '/commerce_coinbase/cancel_payment', array('absolute' => TRUE)),
     )
   );
