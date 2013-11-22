@@ -48,13 +48,15 @@ function commerce_coinbase_requirements($phase) {
           );
         }
 
-        $coinbase_spot_rate = commerce_coinbase_spot_rate($commerce_default_currency);
-        $conversion_rate = $t('1 BTC = @d @code', array('@d' => $coinbase_spot_rate['amount'], '@code' => $coinbase_spot_rate['currency']));
-        $requirements['commerce_coinbase_spot_rate'] = array(
-          'title' => $t('Coinbase Bitcoin spot rate'),
-          'value' => isset($conversion_rate) ? $conversion_rate : $t('Supported'),
-          'severity' => REQUIREMENT_INFO,
-        );
+        if (in_array($commerce_default_currency, $coinbase_currencies)) {
+          $coinbase_spot_rate = commerce_coinbase_spot_rate($commerce_default_currency);
+          $conversion_rate = $t('1 BTC = @d @code', array('@d' => $coinbase_spot_rate['amount'], '@code' => $coinbase_spot_rate['currency']));
+          $requirements['commerce_coinbase_spot_rate'] = array(
+            'title' => $t('Coinbase Bitcoin spot rate'),
+            'value' => isset($conversion_rate) ? $conversion_rate : $t('Supported'),
+            'severity' => REQUIREMENT_INFO,
+          );
+        }
       }
     }
 
