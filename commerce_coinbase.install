@@ -25,6 +25,39 @@ function commerce_coinbase_requirements($phase) {
   }
 
   if ($phase == 'runtime') {
+    if (request_path() == 'admin/reports/status') {
+      $coinbase_currencies = commerce_coinbase_currencies();
+
+      // This if statement will fail if coinbase.com is down.
+      if ($coinbase_currencies !== FALSE && is_array($coinbase_currencies)) {
+        $commerce_currencies = commerce_currencies(TRUE);
+        $commerce_default_currency = commerce_default_currency();
+
+        foreach ($commerce_currencies as $symbol => $details) {
+          if (!in_array($symbol, $coinbase_currencies) && $symbol != 'BTC') {
+            $unsupported_currency[] = $symbol;
+          }
+        }
+        if (!empty($unsupported_currency)) {
+          $requirements['commerce_coinbase_supported_currencies'] = array(
+            'title' => $t('Coinbase currency support'),
+            'value' => $t('Unsupported: @list', array('@list' => implode(', ', $unsupported_currency))),
+            'severity' => REQUIREMENT_WARNING,
+            'description' => $t('<a href="https://coinbase.com/api/v1/currencies">Coinbase supports a limited subset of currencies.</a>'),
+
+          );
+        }
+
+        $coinbase_spot_rate = commerce_coinbase_spot_rate($commerce_default_currency);
+        $conversion_rate = $t('1 BTC = @d @code', array('@d' => $coinbase_spot_rate['amount'], '@code' => $coinbase_spot_rate['currency']));
+        $requirements['commerce_coinbase_spot_rate'] = array(
+          'title' => $t('Coinbase Bitcoin spot rate'),
+          'value' => isset($conversion_rate) ? $conversion_rate : $t('Supported'),
+          'severity' => REQUIREMENT_INFO,
+        );
+      }
+    }
+
     // Error if the Coinbase library isn't installed.
     // This would be better outside the runtime check, but needs Libraries API.
     $library = libraries_detect('coinbase-php');
@@ -57,8 +90,8 @@ function commerce_coinbase_requirements($phase) {
     }
 
     $requirements['commerce_coinbase_donation'] = array(
-      'title' => $t('Commerce Coinbase development and maintenance'),
-      'description' => $t('Commerce Coinbase is <strong>not funded by Coinbase</strong> or any other company. Please fund maintenance efforts to keep up-to-date with changes to the Coinbase Bitcoin API.'),
+      'title' => '<a href="bitcoin:1Drupa1oXCheXrbZbo6LQEu15ZNbFRGjXF">1Drupa1oXCheXrbZbo6LQEu15ZNbFRGjXF</a>',
+      'description' => $t('Commerce Coinbase is not funded by Coinbase or any other company. Please fund ongoing maintenance to keep the module supported and bug-free.'),
       'severity' => REQUIREMENT_INFO,
       'value' => '<script data-gittip-username="deekayen" data-gittip-widget="button" src="//gttp.co/v1.js"></script>',
     );
