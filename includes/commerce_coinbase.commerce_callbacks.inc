@@ -32,7 +32,16 @@ function commerce_coinbase_settings_form($settings = array()) {
     '#title' => t('Coinbase API key'),
     '#size' => 64,
     '#maxlength' => 70,
-    '#description' => t('Coinbase API access key from https://coinbase.com/account/integrations, something like 407fdfa5b4c3706a513c886c41d96cb5388ff1d538fcf0f93292402d3d5036b8.'),
+    '#description' => t('Coinbase API access key from https://coinbase.com/account/integrations, something like ox5Em66zOyTrlYq.'),
+    '#required' => TRUE,
+  );
+  $form['api_secret'] = array(
+    '#type' => 'textfield',
+    '#default_value' => $settings['api_secret'],
+    '#title' => t('Coinbase API secret'),
+    '#size' => 64,
+    '#maxlength' => 70,
+    '#description' => t('Coinbase API secret from https://coinbase.com/account/integrations, something like b5yBxo5q7ePr6ty96ufr4eWn90Lpse.'),
     '#required' => TRUE,
   );
   $form['checkout_display'] = array(
@@ -164,7 +173,10 @@ function commerce_coinbase_redirect_form($form, &$form_state, $order, $payment_m
 
   libraries_load('coinbase-php');
 
-  $coinbase = new Coinbase($payment_method['settings']['api_key']);
+  $key = $payment_method['settings']['api_key'];
+  $secret = $payment_method['settings']['api_secret'];
+  $coinbase_auth = new Coinbase_ApiKeyAuthentication($key, $secret);
+  $coinbase = new Coinbase($coinbase_auth);
 
   $response = $coinbase->createButton(
     $site_name . " order #" . $order->order_id,

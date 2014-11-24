@@ -96,6 +96,7 @@ function commerce_coinbase_default_settings() {
   return array(
     // An API key is required eventually for proper function.
     'api_key' => '',
+    'api_secret' => '',
     // Show text, icon, or both on payment choice page.
     'checkout_display' => 'both',
     'type' => 'buy_now',
@@ -134,7 +135,10 @@ function commerce_coinbase_update_transaction($transaction, $remote_id) {
   libraries_load('coinbase-php');
 
   $payment_method = commerce_payment_method_instance_load($transaction->instance_id);
-  $coinbase = new Coinbase($payment_method['settings']['api_key']);
+  $key = $payment_method['settings']['api_key'];
+  $secret = $payment_method['settings']['api_secret'];
+  $coinbase_auth = new Coinbase_ApiKeyAuthentication($key, $secret);
+  $coinbase = new Coinbase($coinbase_auth);
   $coinbase_transaction = $coinbase->getTransaction($remote_id);
   if (is_object($coinbase_transaction)) {
     switch ($coinbase_transaction->status) {
