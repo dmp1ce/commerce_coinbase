@@ -32,7 +32,7 @@ function commerce_coinbase_settings_form($settings = array()) {
     '#title' => t('Coinbase API key'),
     '#size' => 64,
     '#maxlength' => 70,
-    '#description' => t('Coinbase API access key from https://coinbase.com/account/integrations, something like ox5Em66zOyTrlYq.'),
+    '#description' => t('Coinbase API access key from https://www.coinbase.com/settings/api, something like ox5Em66zOyTrlYq.'),
     '#required' => TRUE,
   );
   $form['api_secret'] = array(
@@ -41,7 +41,7 @@ function commerce_coinbase_settings_form($settings = array()) {
     '#title' => t('Coinbase API secret'),
     '#size' => 64,
     '#maxlength' => 70,
-    '#description' => t('Coinbase API secret from https://coinbase.com/account/integrations, something like b5yBxo5q7ePr6ty96ufr4eWn90Lpse.'),
+    '#description' => t('Coinbase API secret from https://www.coinbase.com/settings/api, something like b5yBxo5q7ePr6ty96ufr4eWn90Lpse.'),
     '#required' => TRUE,
   );
   $form['checkout_display'] = array(
