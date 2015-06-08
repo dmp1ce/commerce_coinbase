@@ -5,7 +5,7 @@ window.addEventListener('message', receiveMessage, false);
 function receiveMessage(event) {
 
   // Make sure the message posted to this window is from Coinbase
-  if (event.origin == 'https://coinbase.com') {
+  if (event.origin == 'https://' + Drupal.settings.coinbaseDomain) {
     var event_type = event.data.split('|')[0];     // "coinbase_payment_complete"
     var event_id   = event.data.split('|')[1];     // ID for this payment type
     var complete = Drupal.settings.coinbaseCompleteCheckout;

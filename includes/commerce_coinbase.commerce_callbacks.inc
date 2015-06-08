@@ -95,6 +95,17 @@ function commerce_coinbase_settings_form($settings = array()) {
     '#description' => t('Using the hosted page will redirect to a generically themed page hosted by Coinbase.'),
     '#default_value' => $settings['redirect_mode'],
   );
+  $form['gateway'] = array(
+    '#type' => 'radios',
+    '#title' => t('Gateway type'),
+    '#options' => array(
+      'production' => t('Production payment gateway'),
+      'sandbox' => t('Sandbox payment gateway (Bitcoin testnet)'),
+    ),
+    '#description' => t('Set the payment gateway to use. Use production for actual bitcoin transaction or the sandbox gateway for bitcoin testnet transactions. Create a sandbox account here: https://@sandbox_domain', array('@sandbox_domain' => COINBASE_SANDBOX_DOMAIN)),
+    '#default_value' => $settings['gateway'],
+  );
+
   return $form;
 }
 
@@ -176,7 +187,7 @@ function commerce_coinbase_redirect_form($form, &$form_state, $order, $payment_m
   $key = $payment_method['settings']['api_key'];
   $secret = $payment_method['settings']['api_secret'];
   $coinbase_auth = new Coinbase_ApiKeyAuthentication($key, $secret);
-  $coinbase = new Coinbase($coinbase_auth);
+  $coinbase = new Coinbase($coinbase_auth, NULL, NULL, _commerce_coinbase_is_sandbox($payment_method));
 
   $response = $coinbase->createButton(
     $site_name . " order #" . $order->order_id,
@@ -199,10 +210,11 @@ function commerce_coinbase_redirect_form($form, &$form_state, $order, $payment_m
   commerce_order_status_update($order, 'checkout_payment', FALSE, NULL, t('Customer clicked the button to pay with Bitcoin on the cart page.'));
   commerce_order_save($order);
 
+  $coinbase_domain = _commerce_coinbase_coinbase_domain($payment_method);
   switch ($payment_method['settings']['redirect_mode']) {
     case 'hosted':
       // Redirect to Coinbase hosted invoice page.
-      drupal_goto('https://coinbase.com/checkouts/' . $response->button->code);
+      drupal_goto('https://' . $coinbase_domain . '/checkouts/' . $response->button->code);
       break;
 
     case 'iframe':
@@ -212,10 +224,13 @@ function commerce_coinbase_redirect_form($form, &$form_state, $order, $payment_m
       $coinbase_path = drupal_get_path('module', 'commerce_coinbase');
       drupal_add_js($coinbase_path . '/commerce_coinbase_redirect.js', array('cache' => FALSE));
 
-      drupal_add_js(array('coinbaseCompleteCheckout' => $form['#action']), 'setting');
+      drupal_add_js(array(
+          'coinbaseCompleteCheckout' => $form['#action'],
+          'coinbaseDomain' => COINBASE_DOMAIN,
+        ), 'setting');
 
       $form['iframe'] = array(
-        '#markup' => '<iframe seamless style="width:500px; height:160px; overflow:hidden; border:none; margin:auto; display:block;" scrolling="no" allowtransparency="true" frameborder="0" src="https://coinbase.com/inline_payments/' . $response->button->code . '"><a href="https://coinbase.com/checkouts/' . $response->button->code . '" target="_blank"><img alt="Pay With Bitcoin" src="https://coinbase.com/assets/buttons/buy_now_large.png"></a></iframe>',
+        '#markup' => '<iframe seamless style="width:500px; height:160px; overflow:hidden; border:none; margin:auto; display:block;" scrolling="no" allowtransparency="true" frameborder="0" src="https://' . $coinbase_domain . '/inline_payments/' . $response->button->code . '"><a href="https://' . $coinbase_domain . '/checkouts/' . $response->button->code . '" target="_blank"><img alt="Pay With Bitcoin" src="https://' . $coinbase_domain . '/assets/buttons/buy_now_large.png"></a></iframe>',
       );
       $form['buttons'] = array(
         '#type' => 'fieldset',

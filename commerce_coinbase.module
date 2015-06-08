@@ -5,6 +5,9 @@
  * Provides a Coinbase payment method for Drupal Commerce.
  */
 
+const COINBASE_DOMAIN = "coinbase.com";
+const COINBASE_SANDBOX_DOMAIN = "sandbox.coinbase.com";
+
 /**
  * Implements hook_libraries_info().
  */
@@ -104,6 +107,7 @@ function commerce_coinbase_default_settings() {
     'text' => t('Pay With Bitcoin'),
     // Options: hosted = hosted checkout; iframe = embedded on payment page.
     'redirect_mode' => 'iframe',
+    'gateway' => 'production',
   );
 }
 
@@ -138,7 +142,7 @@ function commerce_coinbase_update_transaction($transaction, $remote_id) {
   $key = $payment_method['settings']['api_key'];
   $secret = $payment_method['settings']['api_secret'];
   $coinbase_auth = new Coinbase_ApiKeyAuthentication($key, $secret);
-  $coinbase = new Coinbase($coinbase_auth);
+  $coinbase = new Coinbase($coinbase_auth, NULL, NULL, _commerce_coinbase_is_sandbox($payment_method));
   $coinbase_transaction = $coinbase->getTransaction($remote_id);
   if (is_object($coinbase_transaction)) {
     switch ($coinbase_transaction->status) {
@@ -266,7 +270,7 @@ function commerce_coinbase_transaction($payment_method, $order, $charge) {
  *   List of currencies, with keys as names, and values as currency codes.
  */
 function commerce_coinbase_currencies() {
-  $currencies_json = file_get_contents('https://coinbase.com/api/v1/currencies');
+  $currencies_json = file_get_contents('https://' . COINBASE_DOMAIN . '/api/v1/currencies');
   if ($currencies_json === FALSE) {
     // Coinbase is having some connectivity issues.
     return FALSE;
@@ -291,10 +295,10 @@ function commerce_coinbase_currencies() {
  */
 function commerce_coinbase_spot_rate($currency = 'USD') {
   if (empty($currency)) {
-    $spot_rate_json = file_get_contents('https://coinbase.com/api/v1/prices/spot_rate');
+    $spot_rate_json = file_get_contents('https://' . COINBASE_DOMAIN . '/api/v1/prices/spot_rate');
   }
   else {
-    $spot_rate_json = file_get_contents('https://coinbase.com/api/v1/prices/spot_rate?currency=' . $currency);
+    $spot_rate_json = file_get_contents('https://' . COINBASE_DOMAIN . '/api/v1/prices/spot_rate?currency=' . $currency);
   }
   if ($spot_rate_json === FALSE) {
     // Coinbase is having some connectivity issues.
@@ -302,4 +306,30 @@ function commerce_coinbase_spot_rate($currency = 'USD') {
   }
 
   return json_decode($spot_rate_json, TRUE);
+}
+
+/**
+ * Returns the correct Coinbase domain. Either the production or sandbox domain.
+ *
+ * @param array $payment_method
+ *   Payment method.
+ *
+ * @return string
+ *   Coinbase domain.
+ */
+function _commerce_coinbase_coinbase_domain($payment_method) {
+  return (_commerce_coinbase_is_sandbox($payment_method)) ? COINBASE_SANDBOX_DOMAIN : COINBASE_DOMAIN;
+}
+
+/**
+ * Returns the TRUE if the domain is sandbox.
+ *
+ * @param array $payment_method
+ *   Payment method.
+ *
+ * @return bool
+ *   True if Coinbase payment method is set to 'sandbox'.
+ */
+function _commerce_coinbase_is_sandbox($payment_method) {
+  return ($payment_method['settings']['gateway'] == 'sandbox') ? TRUE : FALSE;
 }
